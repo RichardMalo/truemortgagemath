@@ -1,6 +1,6 @@
 /**
  * Advanced Mortgage Calculator (World-Class Edition)
- * Includes: Toggleable PITI, Dynamic PMI, Frequency hacks, LTV charting, and Opportunity Cost Analyzer.
+ * Mobile-Optimized: Disabled modebars, tightened margins, fluid scaling.
  */
 
 // === CONFIGURATION ===
@@ -19,6 +19,9 @@ const CONFIG = {
     }
 };
 
+// Global Plotly config to enforce crispness on mobile (removes the overlapping menu bar)
+const PLOT_CONFIG = { responsive: true, displayModeBar: false };
+
 // === DOM ELEMENTS ===
 const els = {
     form: document.getElementById('mortgageForm'),
@@ -31,14 +34,12 @@ const els = {
         compounding: document.getElementById('compounding'),
         frequency: document.getElementById('paymentFrequency'),
         
-        // PITI Toggle & Section
         pitiToggle: document.getElementById('includePitiToggle'),
         tax: document.getElementById('propertyTax'),
         ins: document.getElementById('homeInsurance'),
         hoa: document.getElementById('hoaFees'),
         pmi: document.getElementById('pmiRate'),
         
-        // Opp Cost Toggle & Section
         oppCostToggle: document.getElementById('oppCostToggle'),
         investRate: document.getElementById('investRate'),
 
@@ -70,14 +71,11 @@ const els = {
 let state = { isDark: true };
 
 // === CORE MATH ===
-
-/** Base standard monthly payment formula */
 const getMonthlyPayment = (p, monthlyRate, n) => {
     if (monthlyRate === 0) return p / n;
     return p * (monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1);
 };
 
-/** Generates the robust schedule handling Periods, Optional PITI, and PMI. */
 const generateSchedule = (inputs, isBaseline = false) => {
     const principal = inputs.homePrice - inputs.downPayment;
     
@@ -93,14 +91,10 @@ const generateSchedule = (inputs, isBaseline = false) => {
 
     let periodsPerYear, periodicPI;
     switch(freq) {
-        case 'monthly': 
-            periodsPerYear = 12; periodicPI = baseMonthlyPI; break;
-        case 'semi-monthly': 
-            periodsPerYear = 24; periodicPI = baseMonthlyPI / 2; break;
-        case 'bi-weekly': 
-            periodsPerYear = 26; periodicPI = (baseMonthlyPI * 12) / 26; break;
-        case 'accelerated-biweekly': 
-            periodsPerYear = 26; periodicPI = baseMonthlyPI / 2; break;
+        case 'monthly': periodsPerYear = 12; periodicPI = baseMonthlyPI; break;
+        case 'semi-monthly': periodsPerYear = 24; periodicPI = baseMonthlyPI / 2; break;
+        case 'bi-weekly': periodsPerYear = 26; periodicPI = (baseMonthlyPI * 12) / 26; break;
+        case 'accelerated-biweekly': periodsPerYear = 26; periodicPI = baseMonthlyPI / 2; break;
     }
 
     let periodicRate = (inputs.compounding === 'semi')
@@ -135,10 +129,7 @@ const generateSchedule = (inputs, isBaseline = false) => {
         if (principalPart + currentExtra > balance) {
             const totalRem = balance;
             principalPart = totalRem - currentExtra; 
-            if (principalPart < 0) {
-                 currentExtra = totalRem;
-                 principalPart = 0;
-            }
+            if (principalPart < 0) { currentExtra = totalRem; principalPart = 0; }
         }
 
         balance -= (principalPart + currentExtra);
@@ -174,10 +165,7 @@ const generateSchedule = (inputs, isBaseline = false) => {
         });
     }
 
-    return {
-        schedule,
-        summary: { periodsToPayoff: schedule.length, periodsPerYear, totalInterest, totalPrincipal, totalEscrow }
-    };
+    return { schedule, summary: { periodsToPayoff: schedule.length, periodsPerYear, totalInterest, totalPrincipal, totalEscrow } };
 };
 
 const formatCurrency = (num) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
@@ -186,12 +174,14 @@ const getBaseLayout = (title, xTitle, yTitle) => {
     const color = state.isDark ? '#e2e8f0' : '#2c3e50';
     const grid = state.isDark ? '#334155' : '#e2e8f0';
     return {
-        title: { text: title, font: { color: color } },
+        title: { text: title, font: { color: color, size: 16 } },
         paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
         font: { color: color, family: 'Inter, sans-serif' },
         xaxis: { title: xTitle, gridcolor: grid, showgrid: true, zeroline: false },
         yaxis: { title: yTitle, gridcolor: grid, showgrid: true, zeroline: false },
-        margin: { t: 40, r: 20, l: 60, b: 50 }, legend: { orientation: 'h', y: -0.2 },
+        // Tightened margins for mobile viewing
+        margin: { t: 40, r: 10, l: 50, b: 40 }, 
+        legend: { orientation: 'h', y: -0.2 },
         autosize: true
     };
 };
@@ -213,6 +203,9 @@ const renderCharts = (baseData, actualData, inputs, hasExtraOrStrategy) => {
     const p1 = actualData.schedule[0] || { principal:0, interest:0, tax:0, ins:0, hoa:0, pmi:0, extra:0 };
     const totalPITI = p1.principal + p1.interest + p1.tax + p1.ins + p1.hoa + p1.pmi + p1.extra;
     
+    // Determine font size dynamically based on screen size for the inner text
+    const innerFontSize = window.innerWidth < 768 ? '18px' : '22px';
+
     Plotly.newPlot('monthlyPaymentCircle', [{
         values: [p1.principal, p1.interest, p1.tax, p1.ins, p1.hoa, p1.pmi, p1.extra].filter(v => v > 0),
         labels: ['Principal', 'Interest', 'Taxes', 'Insurance', 'HOA', 'PMI', 'Extra'].filter((_, i) => [p1.principal, p1.interest, p1.tax, p1.ins, p1.hoa, p1.pmi, p1.extra][i] > 0),
@@ -221,13 +214,13 @@ const renderCharts = (baseData, actualData, inputs, hasExtraOrStrategy) => {
         textinfo: 'none', hovertemplate: '<b>%{label}</b><br>$%{value:,.2f}<extra></extra>'
     }], {
         showlegend: false, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', margin: {t:0, b:0, l:0, r:0},
-        annotations: [{ text: `<b>Total/Period</b><br><span style="font-size: 22px; color: ${state.isDark?'#fff':'#000'}">${formatCurrency(totalPITI)}</span>`, showarrow: false, font: { size: 12, color: state.isDark?'#94a3b8':'#64748b' } }]
-    }, {responsive: true, displayModeBar: false});
+        annotations: [{ text: `<b>Total/Period</b><br><span style="font-size: ${innerFontSize}; color: ${state.isDark?'#fff':'#000'}">${formatCurrency(totalPITI)}</span>`, showarrow: false, font: { size: 12, color: state.isDark?'#94a3b8':'#64748b' } }]
+    }, PLOT_CONFIG);
 
     Plotly.newPlot('paymentBreakdownCircle', [{
         values: [p1.principal, p1.interest], labels: ['Principal', 'Interest'], type: 'pie', hole: 0.6,
         marker: { colors: [CONFIG.colors.principal, CONFIG.colors.interest] }, textinfo: 'none'
-    }], { showlegend: false, paper_bgcolor: 'rgba(0,0,0,0)', margin: {t:0, b:0, l:0, r:0}, annotations: [{text: 'P & I Only', showarrow: false, font: { size: 14, color: state.isDark?'#fff':'#000' }}] }, {responsive: true, displayModeBar: false});
+    }], { showlegend: false, paper_bgcolor: 'rgba(0,0,0,0)', margin: {t:0, b:0, l:0, r:0}, annotations: [{text: 'P & I Only', showarrow: false, font: { size: 14, color: state.isDark?'#fff':'#000' }}] }, PLOT_CONFIG);
 
     const tracesChart3 = [{
         x: baseData.schedule.map(d => d[xKey]), y: baseData.schedule.map(d => d.balance),
@@ -236,19 +229,19 @@ const renderCharts = (baseData, actualData, inputs, hasExtraOrStrategy) => {
     if (hasExtraOrStrategy) tracesChart3.push({ x: actualData.schedule.map(d => d[xKey]), y: actualData.schedule.map(d => d.balance), name: 'Balance (Actual)', type: 'scatter', line: { color: CONFIG.colors.extra, width: 3 } });
     const layout3 = getBaseLayout('Mortgage Balance Over Time', 'Year', 'Balance ($)');
     layout3.shapes = [termLine]; layout3.annotations = [{ x: termX, y: 1, xref: 'x', yref: 'paper', text: 'Term End', showarrow: false, yanchor: 'bottom', font: { color: CONFIG.colors.interest } }];
-    Plotly.newPlot('chart3', tracesChart3, layout3, {responsive: true});
+    Plotly.newPlot('chart3', tracesChart3, layout3, PLOT_CONFIG);
 
     const principalAmount = actualData.schedule.length ? (actualData.schedule[0].balance + actualData.schedule[0].principal) : 0;
     const tracesEquity = [{ x: baseData.schedule.map(d => d[xKey]), y: baseData.schedule.map(d => principalAmount - d.balance), name: 'Equity (Std Monthly)', type: 'scatter', line: { color: CONFIG.colors.principal } }];
     if (hasExtraOrStrategy) tracesEquity.push({ x: actualData.schedule.map(d => d[xKey]), y: actualData.schedule.map(d => principalAmount - d.balance), name: 'Equity (Actual)', type: 'scatter', line: { color: CONFIG.colors.extra } });
-    Plotly.newPlot('chart4', tracesEquity, getBaseLayout('Equity Build-Up', 'Year', 'Equity ($)'), {responsive: true});
+    Plotly.newPlot('chart4', tracesEquity, getBaseLayout('Equity Build-Up', 'Year', 'Equity ($)'), PLOT_CONFIG);
 
     const tracesChart2 = [
         {x: actualData.schedule.map(d => d[xKey]), y: actualData.schedule.map(d => d.totalInterest), name: 'Interest', stackgroup: 'one', line: { color: CONFIG.colors.interest }},
         {x: actualData.schedule.map(d => d[xKey]), y: actualData.schedule.map(d => d.totalPrincipal), name: 'Principal', stackgroup: 'one', line: { color: CONFIG.colors.principal }}
     ];
-    if (inputs.usePiti) tracesChart2.push({x: actualData.schedule.map(d => d[xKey]), y: actualData.schedule.map(d => d.totalEscrow), name: 'Escrow (Tax/Ins/PMI)', stackgroup: 'one', line: { color: CONFIG.colors.tax }});
-    Plotly.newPlot('chart2', tracesChart2, getBaseLayout('Cumulative Payments (Total Outflow)', 'Year', 'Total Paid ($)'), {responsive: true});
+    if (inputs.usePiti) tracesChart2.push({x: actualData.schedule.map(d => d[xKey]), y: actualData.schedule.map(d => d.totalEscrow), name: 'Escrow', stackgroup: 'one', line: { color: CONFIG.colors.tax }});
+    Plotly.newPlot('chart2', tracesChart2, getBaseLayout('Cumulative Outflow', 'Year', 'Total Paid ($)'), PLOT_CONFIG);
 
     const annualData = {};
     actualData.schedule.forEach(d => {
@@ -263,12 +256,12 @@ const renderCharts = (baseData, actualData, inputs, hasExtraOrStrategy) => {
         { x: years, y: years.map(y=>annualData[y].e), name: 'Extra', type: 'bar', marker: {color: CONFIG.colors.extra} }
     ];
     if (inputs.usePiti) tracesChart11.splice(1, 0, { x: years, y: years.map(y=>annualData[y].esc), name: 'Escrow', type: 'bar', marker: {color: CONFIG.colors.tax} });
-    Plotly.newPlot('chart11', tracesChart11, Object.assign(getBaseLayout('Annual Cash Flow Split', 'Year', 'Amount ($)'), {barmode: 'stack'}), {responsive: true});
+    Plotly.newPlot('chart11', tracesChart11, Object.assign(getBaseLayout('Annual Cash Flow Split', 'Year', 'Amount ($)'), {barmode: 'stack'}), PLOT_CONFIG);
 
     Plotly.newPlot('chart6', [
         { x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>d.interest), name: 'Interest Portion', type: 'scatter', fill: 'tozeroy', line: {color: CONFIG.colors.interest} },
         { x: actualData.schedule.map(d=>d[xKey]), y: actualData.schedule.map(d=>d.principal), name: 'Principal Portion', type: 'scatter', fill: 'tonexty', line: {color: CONFIG.colors.principal} }
-    ], getBaseLayout('Periodic Payment Composition', 'Year', 'Amount ($)'), {responsive: true});
+    ], getBaseLayout('Periodic Payment Comp.', 'Year', 'Amount ($)'), PLOT_CONFIG);
 
     const finalData = actualData.schedule[actualData.schedule.length-1] || {totalInterest:0, totalEscrow:0, totalPrincipal:0, totalExtra:0};
     const tracesTotal = [
@@ -276,65 +269,58 @@ const renderCharts = (baseData, actualData, inputs, hasExtraOrStrategy) => {
         { x: ['Total Cost'], y: [finalData.totalPrincipal], name: 'Principal', type: 'bar', marker: {color: CONFIG.colors.principal} },
         { x: ['Total Cost'], y: [finalData.totalExtra], name: 'Extra Payments', type: 'bar', marker: {color: CONFIG.colors.extra} }
     ];
-    if (inputs.usePiti) tracesTotal.splice(1, 0, { x: ['Total Cost'], y: [finalData.totalEscrow], name: 'Escrow (Tax/Ins/PMI)', type: 'bar', marker: {color: CONFIG.colors.tax} });
-    Plotly.newPlot('chart', tracesTotal, Object.assign(getBaseLayout('Lifetime Cost Breakdown', '', 'Amount ($)'), {barmode: 'stack'}), {responsive: true});
+    if (inputs.usePiti) tracesTotal.splice(1, 0, { x: ['Total Cost'], y: [finalData.totalEscrow], name: 'Escrow', type: 'bar', marker: {color: CONFIG.colors.tax} });
+    Plotly.newPlot('chart', tracesTotal, Object.assign(getBaseLayout('Lifetime Cost Breakdown', '', 'Amount ($)'), {barmode: 'stack'}), PLOT_CONFIG);
 
-    // --- LTV & PMI Drop Chart ---
+    // --- LTV Chart ---
     if (inputs.usePiti) {
         els.containers.ltvContainer.style.display = 'flex';
-        const traceLTVBase = { x: baseData.schedule.map(d => d[xKey]), y: baseData.schedule.map(d => d.ltv), name: 'LTV (Std Monthly)', type: 'scatter', line: { color: CONFIG.colors.principal } };
+        const traceLTVBase = { x: baseData.schedule.map(d => d[xKey]), y: baseData.schedule.map(d => d.ltv), name: 'LTV (Std)', type: 'scatter', line: { color: CONFIG.colors.principal } };
         const tracesLTV = [traceLTVBase];
         if (hasExtraOrStrategy) tracesLTV.push({ x: actualData.schedule.map(d => d[xKey]), y: actualData.schedule.map(d => d.ltv), name: 'LTV (Actual)', type: 'scatter', line: { color: CONFIG.colors.extra, width: 3 } });
 
-        const layoutLTV = getBaseLayout('Loan-to-Value (LTV) & PMI Drop', 'Year', 'LTV (%)');
+        const layoutLTV = getBaseLayout('LTV & PMI Drop', 'Year', 'LTV (%)');
         layoutLTV.yaxis.range = [0, Math.max(105, actualData.schedule[0]?.ltv || 100)];
         layoutLTV.shapes = [ termLine, { type: 'line', x0: 0, y0: 80, x1: 1, y1: 80, xref: 'paper', yref: 'y', line: { color: CONFIG.colors.thresholdRed, width: 2, dash: 'dash' } } ];
         layoutLTV.annotations = [
             { x: termX, y: 1, xref: 'x', yref: 'paper', text: 'Term End', showarrow: false, yanchor: 'bottom', font: { color: CONFIG.colors.interest } },
             { x: 1, y: 80, xref: 'paper', yref: 'y', text: '80% LTV (PMI Drops)', showarrow: false, xanchor: 'right', yanchor: 'bottom', font: { color: CONFIG.colors.thresholdRed, size: 12 } }
         ];
-        Plotly.newPlot('chartLTV', tracesLTV, layoutLTV, {responsive: true});
+        Plotly.newPlot('chartLTV', tracesLTV, layoutLTV, PLOT_CONFIG);
     } else {
         els.containers.ltvContainer.style.display = 'none';
         Plotly.purge('chartLTV'); 
     }
 
-    // --- NEW: OPPORTUNITY COST ANALYZER ---
+    // --- OPPORTUNITY COST ANALYZER ---
     if (inputs.useOppCost && hasExtraOrStrategy) {
         els.containers.oppCostContainer.style.display = 'flex';
-        
         const investRateAnnual = inputs.investRate / 100;
         const hp = inputs.homePrice;
         
-        // Path 1: Pay Debt First
         const path1X = [], path1Y = [];
         let p1InvestBalance = 0;
         const p1PIExtra = actualData.schedule[0].principal + actualData.schedule[0].interest + actualData.schedule[0].extra;
         const p1PeriodsPerYear = actualData.summary.periodsPerYear;
         const p1RatePerPeriod = Math.pow(1 + investRateAnnual, 1/p1PeriodsPerYear) - 1;
         
-        actualData.schedule.forEach(d => {
-            path1X.push(d.year); path1Y.push(hp - d.balance); // Wealth = Equity
-        });
+        actualData.schedule.forEach(d => { path1X.push(d.year); path1Y.push(hp - d.balance); });
         
         let currentYear = path1X[path1X.length - 1];
         const maxYear = baseData.schedule[baseData.schedule.length - 1].year;
         
-        // Once paid off, invest that same monthly budget
         while (currentYear < maxYear) {
             currentYear += (1 / p1PeriodsPerYear);
             p1InvestBalance = (p1InvestBalance + p1PIExtra) * (1 + p1RatePerPeriod);
             path1X.push(currentYear); path1Y.push(hp + p1InvestBalance);
         }
         
-        // Path 2: Invest the Difference Instead
         const path2X = [], path2Y = [];
         let p2InvestBalance = 0;
         const p2PI = baseData.schedule[0].principal + baseData.schedule[0].interest;
         const p2PeriodsPerYear = baseData.summary.periodsPerYear;
         const p2RatePerPeriod = Math.pow(1 + investRateAnnual, 1/p2PeriodsPerYear) - 1;
         
-        // Total cash flow difference per year
         const annualBudget = p1PIExtra * p1PeriodsPerYear;
         const annualBase = p2PI * p2PeriodsPerYear;
         const p2InvestPerPeriod = Math.max(0, annualBudget - annualBase) / p2PeriodsPerYear;
@@ -344,13 +330,13 @@ const renderCharts = (baseData, actualData, inputs, hasExtraOrStrategy) => {
             path2X.push(d.year); path2Y.push(hp - d.balance + p2InvestBalance);
         });
         
-        const layoutOppCost = getBaseLayout('Net Worth Projection: Pay Debt vs. Invest', 'Year', 'Net Worth ($)');
+        const layoutOppCost = getBaseLayout('Net Worth Projection: Pay Debt vs Invest', 'Year', 'Net Worth ($)');
         layoutOppCost.legend = { orientation: 'h', y: -0.2 };
         
         Plotly.newPlot('chartOppCost', [
             { x: path1X, y: path1Y, name: 'Pay Off Debt Faster', type: 'scatter', line: { color: CONFIG.colors.extra, width: 3 } },
             { x: path2X, y: path2Y, name: 'Invest Extra Cashflow', type: 'scatter', line: { color: CONFIG.colors.investLine, width: 3, dash: 'dot' } }
-        ], layoutOppCost, {responsive: true});
+        ], layoutOppCost, PLOT_CONFIG);
         
     } else {
         els.containers.oppCostContainer.style.display = 'none';
@@ -363,18 +349,18 @@ const renderCharts = (baseData, actualData, inputs, hasExtraOrStrategy) => {
         const totalCostExtra = actualData.summary.totalInterest + actualData.summary.totalEscrow;
         
         Plotly.newPlot('chart9', [{
-            x: ['Standard Monthly', 'Actual Strategy'], y: [totalCostBase, totalCostExtra], type: 'bar',
+            x: ['Std Monthly', 'Actual'], y: [totalCostBase, totalCostExtra], type: 'bar',
             text: [formatCurrency(totalCostBase), formatCurrency(totalCostExtra)], textposition: 'auto',
             marker: { color: [CONFIG.colors.interest, CONFIG.colors.extra] }
-        }], getBaseLayout('Total Cost Comparison (Interest + Escrow)', '', '$'), {responsive: true});
+        }], getBaseLayout('Total Cost Comparison', '', '$'), PLOT_CONFIG);
 
         const yearsBase = (baseData.summary.periodsToPayoff / 12).toFixed(1);
         const yearsExtra = (actualData.summary.periodsToPayoff / actualData.summary.periodsPerYear).toFixed(1);
         Plotly.newPlot('chart12', [{
-            x: ['Standard Monthly', 'Actual Strategy'], y: [yearsBase, yearsExtra], type: 'bar',
+            x: ['Std Monthly', 'Actual'], y: [yearsBase, yearsExtra], type: 'bar',
             text: [yearsBase + ' Years', yearsExtra + ' Years'], textposition: 'auto',
             marker: { color: [CONFIG.colors.principal, CONFIG.colors.extra] }
-        }], getBaseLayout('Time to Pay Off', '', 'Years'), {responsive: true});
+        }], getBaseLayout('Time to Pay Off', '', 'Years'), PLOT_CONFIG);
     }
 };
 
@@ -496,6 +482,9 @@ document.getElementById('clearBtn').addEventListener('click', () => {
     calculate();
 });
 document.getElementById('printChartsBtn').addEventListener('click', () => window.print());
+
+// Auto-resize charts if phone orientation changes
+window.addEventListener('resize', () => calculate());
 
 document.addEventListener('DOMContentLoaded', () => {
     setNextMonthStart();
