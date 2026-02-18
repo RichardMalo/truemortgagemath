@@ -1,6 +1,6 @@
 /**
  * Advanced Mortgage Calculator (World-Class Edition)
- * Mobile-Optimized: Disabled modebars, tightened margins, fluid scaling.
+ * Mobile-Optimized: Disabled modebars globally, tightened margins, fluid scaling.
  */
 
 // === CONFIGURATION ===
@@ -19,7 +19,7 @@ const CONFIG = {
     }
 };
 
-// Global Plotly config to enforce crispness on mobile (removes the overlapping menu bar)
+// Global Plotly config to enforce crispness (prevents the menu bar from rendering)
 const PLOT_CONFIG = { responsive: true, displayModeBar: false };
 
 // === DOM ELEMENTS ===
@@ -34,12 +34,14 @@ const els = {
         compounding: document.getElementById('compounding'),
         frequency: document.getElementById('paymentFrequency'),
         
+        // PITI Toggle & Section
         pitiToggle: document.getElementById('includePitiToggle'),
         tax: document.getElementById('propertyTax'),
         ins: document.getElementById('homeInsurance'),
         hoa: document.getElementById('hoaFees'),
         pmi: document.getElementById('pmiRate'),
         
+        // Opp Cost Toggle & Section
         oppCostToggle: document.getElementById('oppCostToggle'),
         investRate: document.getElementById('investRate'),
 
@@ -170,17 +172,19 @@ const generateSchedule = (inputs, isBaseline = false) => {
 
 const formatCurrency = (num) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
 
+// === LAYOUT ENGINE ===
 const getBaseLayout = (title, xTitle, yTitle) => {
     const color = state.isDark ? '#e2e8f0' : '#2c3e50';
     const grid = state.isDark ? '#334155' : '#e2e8f0';
     return {
-        title: { text: title, font: { color: color, size: 16 } },
+        // Pinned title up high
+        title: { text: title, font: { color: color, size: 16 }, y: 0.98 },
         paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
         font: { color: color, family: 'Inter, sans-serif' },
         xaxis: { title: xTitle, gridcolor: grid, showgrid: true, zeroline: false },
         yaxis: { title: yTitle, gridcolor: grid, showgrid: true, zeroline: false },
-        // Tightened margins for mobile viewing
-        margin: { t: 40, r: 10, l: 50, b: 40 }, 
+        // IMPORTANT FIX: Increased Top Margin (t: 65) to give title breathing room away from hover labels
+        margin: { t: 65, r: 10, l: 50, b: 40 }, 
         legend: { orientation: 'h', y: -0.2 },
         autosize: true
     };
@@ -330,7 +334,7 @@ const renderCharts = (baseData, actualData, inputs, hasExtraOrStrategy) => {
             path2X.push(d.year); path2Y.push(hp - d.balance + p2InvestBalance);
         });
         
-        const layoutOppCost = getBaseLayout('Net Worth Projection: Pay Debt vs Invest', 'Year', 'Net Worth ($)');
+        const layoutOppCost = getBaseLayout('Projection: Pay Debt vs Invest', 'Year', 'Net Worth ($)');
         layoutOppCost.legend = { orientation: 'h', y: -0.2 };
         
         Plotly.newPlot('chartOppCost', [
