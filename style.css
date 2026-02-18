@@ -126,6 +126,97 @@ th { background-color: var(--readonly-bg); font-weight: 600; position: sticky; t
 #error-message { background-color: var(--danger-color); color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; text-align: center; }
 
 /* ========================================= */
+/* PLOTLY OVERRIDES & CRISPNESS HACKS        */
+/* ========================================= */
+
+/* 1. Nuke the Plotly Modebar (Menu Bar) permanently */
+.modebar, .modebar-container {
+    display: none !important;
+}
+
+/* ========================================= */
+/* MOBILE OPTIMIZATION (CELLPHONES)          */
+/* ========================================= */
+@media (max-width: 768px) {
+    .container { padding: 10px; }
+    header h1 { font-size: 1.5rem; }
+
+    #form-container { padding: 15px; gap: 20px; }
+    form { min-width: 100%; }
+    .input-group-row { flex-direction: column; gap: 15px; }
+    .input-group { min-width: 100%; }
+
+    .true-payment-circle { width: 200px; height: 200px; }
+    .payment-breakdown-circle { width: 150px; height: 150px; }
+    .circles-container { padding-top: 0; gap: 20px; }
+
+    #results-container { padding: 15px; }
+
+    /* Increased min-height slightly to 320px to account for the new top margin */
+    .chart-box { min-width: 100%; min-height: 320px; padding: 5px; margin-bottom: 15px; }
+    .chart-row { gap: 10px; margin-bottom: 10px; }
+    
+    #amortization-table-container { padding: 10px; }
+    th, td { padding: 8px 10px; font-size: 0.9rem; }
+}
+
+@media print {
+    body { background-color: white; color: black; }
+    header, .print-buttons, #form-container, #results-container { display: none; }
+    #printable-content { display: block; }
+    .chart-box { break-inside: avoid; box-shadow: none; border: 1px solid #ccc; margin-bottom: 20px; }
+    #amortization-table th { background-color: #eee !important; color: black; position: static; }
+    #amortization-table td { border-bottom: 1px solid #ccc; }
+    .js-plotly-plot { margin-bottom: 20px; }
+}  border-radius: 6px; background-color: var(--input-bg);
+  color: var(--text-color); font-size: 1rem; box-sizing: border-box;
+}
+
+button {
+  width: 100%; padding: 14px; border: none; border-radius: 6px; margin-top: 15px;
+  font-size: 1rem; font-weight: 600; cursor: pointer;
+  background-color: var(--primary-color); color: white; transition: opacity 0.2s;
+}
+button:hover { opacity: 0.9; }
+button.secondary-btn { background-color: var(--border-color); color: var(--text-color); }
+
+.circles-container {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: flex-start; gap: 30px; min-width: 250px; padding-top: 20px;
+}
+.circle-wrapper { text-align: center; }
+.circle-wrapper span { display: block; margin-top: 5px; font-weight: 600; font-size: 0.9rem; }
+
+.true-payment-circle { width: 240px; height: 240px; }
+.payment-breakdown-circle { width: 180px; height: 180px; }
+
+#results-container {
+  background-color: var(--card-bg); padding: 25px; border-radius: 12px;
+  box-shadow: var(--shadow); margin-bottom: 40px;
+}
+#results-container h3 { margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;}
+.results-row { flex-wrap: wrap; }
+.highlight-group input { color: var(--accent-color); font-weight: bold; border-color: var(--accent-color); }
+input[readonly] { background-color: var(--readonly-bg); cursor: default; }
+
+#charts-container { padding: 10px; }
+.chart-row { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px; }
+.chart-box { flex: 1; min-width: 400px; background: var(--card-bg); border-radius: 8px; box-shadow: var(--shadow); padding: 15px; min-height: 400px; }
+
+.full-width-chart { min-width: 100%; }
+.comparison-title { text-align: center; margin: 40px 0 20px 0; color: var(--primary-color); }
+
+#amortization-table-container { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: var(--shadow); margin-top: 30px; }
+.table-responsive { overflow-x: auto; max-height: 600px; overflow-y: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 600px; }
+th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+th { background-color: var(--readonly-bg); font-weight: 600; position: sticky; top: 0; }
+
+.print-buttons { text-align: center; margin: 40px 0; }
+.print-buttons button { max-width: 200px; }
+#error-message { background-color: var(--danger-color); color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; text-align: center; }
+
+/* ========================================= */
 /* MOBILE OPTIMIZATION (CELLPHONES)          */
 /* ========================================= */
 @media (max-width: 768px) {
@@ -167,3 +258,4 @@ th { background-color: var(--readonly-bg); font-weight: 600; position: sticky; t
     #amortization-table td { border-bottom: 1px solid #ccc; }
     .js-plotly-plot { margin-bottom: 20px; }
 }
+
