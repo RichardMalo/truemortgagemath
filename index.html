@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>World-Class Mortgage Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Mortgage Calculator</h1>
+            <div class="mode-toggle">
+                <label for="mode-switch">Dark Mode</label>
+                <label class="switch">
+                    <input type="checkbox" id="mode-switch" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </header>
+
+        <div id="error-message" role="alert" style="display:none"></div>
+
+        <div id="form-container" class="form-with-circle">
+            <form id="mortgageForm" autocomplete="off">
+                
+                <h3 class="section-title">Property & Loan</h3>
+                <div class="input-group-row">
+                    <div class="input-group">
+                        <label for="homePrice">Home Price ($):</label>
+                        <input type="number" id="homePrice" required value="850000" step="1000" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="downPayment">Down Payment ($):</label>
+                        <input type="number" id="downPayment" required value="0" step="1000" min="0">
+                    </div>
+                </div>
+                
+                <div class="input-group-row">
+                    <div class="input-group">
+                        <label for="interestRate">Interest Rate (%):</label>
+                        <input type="number" id="interestRate" step="0.01" required value="2.62" min="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="amortization">Amortization (Years):</label>
+                        <input type="number" id="amortization" required value="25" step="any" min="0.1" max="100">
+                    </div>
+                </div>
+
+                <div class="input-group-row">
+                    <div class="input-group">
+                        <label for="term">Term Length (Years):</label>
+                        <input type="number" id="term" required value="5" step="any" min="0.1">
+                    </div>
+                    <div class="input-group">
+                        <label for="compounding">Compounding:</label>
+                        <select id="compounding" class="custom-select">
+                            <option value="semi">Canadian (Semi-Annual)</option>
+                            <option value="monthly">US (Monthly)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section-header-with-toggle">
+                    <h3 class="section-title">Taxes, Insurance & Fees</h3>
+                    <div class="toggle-wrapper" title="Include Escrow (PITI) in calculations">
+                        <label class="switch small-switch">
+                            <input type="checkbox" id="includePitiToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="pitiSection" style="display: none;">
+                    <div class="input-group-row">
+                        <div class="input-group">
+                            <label for="propertyTax">Property Tax (% / yr):</label>
+                            <input type="number" id="propertyTax" value="1.2" step="0.01" min="0">
+                        </div>
+                        <div class="input-group">
+                            <label for="homeInsurance">Home Insurance ($ / yr):</label>
+                            <input type="number" id="homeInsurance" value="1200" step="50" min="0">
+                        </div>
+                    </div>
+                    <div class="input-group-row">
+                        <div class="input-group">
+                            <label for="hoaFees">HOA Fees ($ / mo):</label>
+                            <input type="number" id="hoaFees" value="0" step="10" min="0">
+                        </div>
+                        <div class="input-group">
+                            <label for="pmiRate">PMI (% / yr):</label>
+                            <div class="tooltip">Drops automatically at 80% LTV</div>
+                            <input type="number" id="pmiRate" value="0.5" step="0.01" min="0">
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="section-title">Repayment Strategy</h3>
+                <div class="input-group-row">
+                    <div class="input-group">
+                        <label for="paymentFrequency">Payment Frequency:</label>
+                        <select id="paymentFrequency" class="custom-select">
+                            <option value="monthly">Monthly</option>
+                            <option value="semi-monthly">Semi-Monthly (24/yr)</option>
+                            <option value="bi-weekly">Bi-Weekly (26/yr)</option>
+                            <option value="accelerated-biweekly">Accelerated Bi-Weekly</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="extraPayment">Extra Payment ($ / period):</label>
+                        <input type="number" id="extraPayment" required value="0" step="50" min="0">
+                    </div>
+                </div>
+                
+                <div class="input-group-row">
+                    <div class="input-group">
+                        <label for="firstPaymentDate">Start Date:</label>
+                        <input type="date" id="firstPaymentDate" value="">
+                    </div>
+                </div>
+
+                <div class="section-header-with-toggle">
+                    <h3 class="section-title">Opportunity Cost Analyzer</h3>
+                    <div class="toggle-wrapper" title="Compare paying off mortgage vs investing extra cash">
+                        <label class="switch small-switch">
+                            <input type="checkbox" id="oppCostToggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="oppCostSection" style="display: none;">
+                    <div class="input-group-row">
+                        <div class="input-group">
+                            <label for="investRate">Expected Investment Return (% / yr):</label>
+                            <input type="number" id="investRate" value="7.0" step="0.1">
+                        </div>
+                        <div class="input-group">
+                            <p style="font-size: 0.85rem; color: #64748b; margin-top: 25px;">Assumes extra cashflow is invested.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group-row">
+                    <div class="input-group full-width">
+                        <button type="submit" id="calcBtn">Calculate</button>
+                        <button type="button" id="clearBtn" class="secondary-btn">Reset</button>
+                    </div>
+                </div>
+            </form>
+
+            <div class="circles-container">
+                <div class="circle-wrapper">
+                    <div class="true-payment-circle" id="monthlyPaymentCircle"></div>
+                    <span id="truePaymentLabel">True Periodic Payment (P & I)</span>
+                </div>
+                <div class="circle-wrapper">
+                    <div class="payment-breakdown-circle" id="paymentBreakdownCircle"></div>
+                    <span>Principal vs. Interest</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="results-container">
+            <h3>Loan Summary</h3>
+            <div class="input-group-row results-row">
+                <div class="input-group">
+                    <label>Mortgage Amount:</label>
+                    <input type="text" id="mortgageAmountDisplay" readonly>
+                </div>
+                <div class="input-group">
+                    <label>Balance at Term End:</label>
+                    <input type="text" id="balanceAtTerm" readonly>
+                </div>
+                <div class="input-group">
+                    <label>Actual Payoff Time:</label>
+                    <input type="text" id="paidOffIn" readonly>
+                </div>
+                <div class="input-group highlight-group">
+                    <label>Total Savings (vs Std Monthly):</label>
+                    <input type="text" id="extraSavedTotal" readonly>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="printable-content">
+        <div id="charts-container">
+            <h2>Visual Analysis</h2>
+            
+            <div class="chart-row">
+                <div id="chart3" class="chart-box"></div> <div id="chart" class="chart-box"></div>  </div>
+
+            <div class="chart-row">
+                <div id="chart4" class="chart-box"></div> <div id="chart2" class="chart-box"></div> </div>
+
+            <div class="chart-row">
+                <div id="chart11" class="chart-box"></div> <div id="chart6" class="chart-box"></div>  </div>
+
+            <div id="ltv-chart-container" class="chart-row" style="display: none;">
+                <div id="chartLTV" class="chart-box full-width-chart"></div>
+            </div>
+
+            <div id="opp-cost-chart-container" class="chart-row" style="display: none;">
+                <div id="chartOppCost" class="chart-box full-width-chart"></div>
+            </div>
+            
+            <div id="comparison-section">
+                <h2 class="comparison-title">Impact of Accelerated Strategy</h2>
+                <div class="chart-row">
+                    <div id="chart9" class="chart-box"></div> <div id="chart12" class="chart-box"></div> </div>
+            </div>
+        </div>
+
+        <div id="amortization-table-container">
+            <h2>Amortization Schedule</h2>
+            <div class="table-responsive">
+                <table id="amortization-table">
+                    <thead>
+                        <tr>
+                            <th>Date / #</th>
+                            <th>Total Payment</th>
+                            <th>Principal</th>
+                            <th>Interest</th>
+                            <th id="escrowTh" style="display: none;">Escrow (Tax/Ins)</th>
+                            <th>Extra</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="print-buttons">
+        <button id="printChartsBtn">Print Report</button>
+    </div>
+
+    <script src="mortgagecalculator.js"></script>
+</body>
+</html>
