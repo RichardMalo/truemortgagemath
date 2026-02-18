@@ -53,5 +53,5 @@ This project is built to be lightning-fast and entirely client-side. No database
 
 > *"The best financial tool isn't just a calculator; it's a simulator for your financial future."*
 
-**Created by:** [Your Name/Handle]  
+**Created by:** [Richard Malolepszy]  
 **License:** MIT
