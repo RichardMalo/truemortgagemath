@@ -1,6 +1,6 @@
 # 🏡 World-Class Mortgage Calculator: The Ultimate Financial Planning Tool
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-Click_Here-blue?style=for-the-badge)](#) *https://richardmalo.github.io/truemortgagemath/*
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Click_Here-blue?style=for-the-badge)](#) *(https://richardmalo.github.io/truemortgagemath/)*
 
 Most online mortgage calculators are basic lead-generation widgets that stop at "how much is my monthly payment." 
 
